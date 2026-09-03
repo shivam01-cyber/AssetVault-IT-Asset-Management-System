@@ -1,0 +1,34 @@
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+venv/
+backend/venv/
+.venv/
+env/
+
+# Environment variables and secrets
+.env
+backend/.env
+*.env
+!.env.example
+
+# Node modules / build files
+node_modules/
+build/
+
+# Logs
+*.log
+
+# User-uploaded ticket attachments
+backend/uploads/
+
+# Local database files
+*.db
+*.sqlite
+*.sqlite3
+
+# OS files
+.DS_Store
+Thumbs.db

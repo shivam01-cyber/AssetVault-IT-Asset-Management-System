@@ -1,0 +1,56 @@
+{% extends "employee/base_employee.html" %}
+{% set active_page = "profile" %}
+{% block title %}My Profile{% endblock %}
+{% block heading %}My Profile{% endblock %}
+{% block subheading %}Your account details{% endblock %}
+
+{% block content %}
+<section class="mb-6 rounded-2xl bg-white p-6 shadow-[0_1px_3px_rgba(15,23,42,0.06)] ring-1 ring-slate-200/70">
+  <div class="flex flex-col gap-6 sm:flex-row sm:items-center">
+    <div class="grid h-28 w-28 shrink-0 place-items-center overflow-hidden rounded-3xl bg-slate-100 ring-1 ring-slate-200">
+      {% if employee.profile_image_filename %}<img src="{{ url_for('employee_profile_photo_file', employee_id=employee.id) }}" alt="{{ employee.name }} profile photo" class="h-full w-full object-cover">{% else %}<span class="font-display text-3xl font-bold text-slate-400">{{ employee.name[:1] | upper }}</span>{% endif %}
+    </div>
+    <div class="min-w-0 flex-1"><h2 class="font-display text-xl font-semibold text-ink-900">{{ employee.name }}</h2><p class="mt-1 text-sm text-slate-500">Add a professional profile photo to personalize your employee portal.</p>
+      <form class="mt-4 flex flex-wrap items-center gap-3" method="post" enctype="multipart/form-data" action="{{ url_for('employee_profile_photo') }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="file" name="profile_image" accept="image/png,image/jpeg" required class="max-w-full text-sm"><button class="rounded-xl bg-ink-900 px-4 py-2.5 text-sm font-semibold text-white hover:-translate-y-0.5">Upload photo</button></form><p class="mt-2 text-xs text-slate-400">JPG/JPEG/PNG · maximum 2 MB</p>
+    </div>
+  </div>
+</section>
+<section class="rounded-2xl bg-white p-6 shadow-[0_1px_3px_rgba(15,23,42,0.06)] ring-1 ring-slate-200/70" data-testid="employee-profile-details">
+  <dl class="grid gap-x-6 gap-y-5 sm:grid-cols-2">
+    <div>
+      <dt class="text-xs font-semibold uppercase tracking-widest text-slate-400">Employee ID</dt>
+      <dd class="mt-1 text-sm font-medium text-ink-900" data-testid="profile-employee-id">#{{ employee.id }}</dd>
+    </div>
+    <div>
+      <dt class="text-xs font-semibold uppercase tracking-widest text-slate-400">Name</dt>
+      <dd class="mt-1 text-sm text-ink-900" data-testid="profile-name">{{ employee.name }}</dd>
+    </div>
+    <div>
+      <dt class="text-xs font-semibold uppercase tracking-widest text-slate-400">Email</dt>
+      <dd class="mt-1 text-sm text-ink-900" data-testid="profile-email">{{ employee.email }}</dd>
+    </div>
+    <div>
+      <dt class="text-xs font-semibold uppercase tracking-widest text-slate-400">Department</dt>
+      <dd class="mt-1 text-sm text-ink-900" data-testid="profile-department">{{ employee.department }}</dd>
+    </div>
+    <div>
+      <dt class="text-xs font-semibold uppercase tracking-widest text-slate-400">Job title</dt>
+      <dd class="mt-1 text-sm text-ink-900" data-testid="profile-job-title">{{ employee.job_title or '—' }}</dd>
+    </div>
+    <div>
+      <dt class="text-xs font-semibold uppercase tracking-widest text-slate-400">Account status</dt>
+      <dd class="mt-1" data-testid="profile-account-status">
+        <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold {% if employee.account_status == 'Active' %}bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200{% else %}bg-slate-100 text-slate-600 ring-1 ring-slate-200{% endif %}">{{ employee.account_status }}</span>
+      </dd>
+    </div>
+    <div class="sm:col-span-2">
+      <dt class="text-xs font-semibold uppercase tracking-widest text-slate-400">Joined</dt>
+      <dd class="mt-1 text-sm text-ink-900" data-testid="profile-created-at">{{ employee.created_at.strftime('%Y-%m-%d') if employee.created_at else '—' }}</dd>
+    </div>
+  </dl>
+  <p class="mt-6 text-xs text-slate-400">
+    To update your department, job title, or other account details, please contact your administrator.
+  </p>
+</section>
+{% endblock %}

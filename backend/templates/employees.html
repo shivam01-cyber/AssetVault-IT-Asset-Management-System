@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% block title %}Employees{% endblock %}
+{% block heading %}Employees{% endblock %}
+{% block subheading %}{{ employees | length }} people in the directory{% endblock %}
+
+{% block header_action %}
+<button type="button" data-testid="add-employee-button" onclick="openEmployeeModal()"
+        class="rounded-xl bg-ink-900 px-4 py-2.5 text-sm font-semibold text-white transition-transform duration-200 hover:-translate-y-0.5">
+  + Add employee
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="rounded-2xl bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.06)] ring-1 ring-slate-200/70 sm:p-6">
+  <div class="overflow-x-auto">
+    <table id="employeesTable" data-testid="employees-table" class="w-full text-left text-sm">
+      <thead>
+        <tr class="border-b border-slate-200 text-xs uppercase tracking-widest text-slate-400">
+          <th class="px-3 py-3">Name</th>
+          <th class="px-3 py-3">Email</th>
+          <th class="px-3 py-3">Department</th>
+          <th class="px-3 py-3">Job title</th>
+          <th class="px-3 py-3">Assets held</th>
+          <th class="px-3 py-3">Login status</th>
+          <th class="px-3 py-3 text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        {% for e in employees %}
+        <tr data-testid="employee-row-{{ e.id }}" class="transition-colors hover:bg-slate-50/80">
+          <td class="px-3 py-3.5 font-medium text-ink-900">
+            <a href="{{ url_for('employee_detail', employee_id=e.id) }}" data-testid="employee-detail-link-{{ e.id }}" class="hover:text-sky-600 hover:underline">{{ e.name }}</a>
+          </td>
+          <td class="px-3 py-3.5 text-slate-600">{{ e.email }}</td>
+          <td class="px-3 py-3.5 text-slate-600">{{ e.department }}</td>
+          <td class="px-3 py-3.5 text-slate-500">{{ e.job_title or '—' }}</td>
+          <td class="px-3 py-3.5">
+            <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700" data-testid="employee-asset-count-{{ e.id }}">{{ e.asset_count }}</span>
+          </td>
+          <td class="px-3 py-3.5">
+            <span data-testid="employee-login-status-{{ e.id }}"
+                  class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1
+                  {% if not e.has_login_configured %}bg-slate-100 text-slate-500 ring-slate-200
+                  {% elif e.account_status == 'Active' %}bg-emerald-50 text-emerald-700 ring-emerald-200
+                  {% else %}bg-amber-50 text-amber-700 ring-amber-200{% endif %}">
+              {{ e.login_state }}
+            </span>
+          </td>
+          <td class="px-3 py-3.5">
+            <div class="flex flex-wrap justify-end gap-1.5">
+              <button type="button" data-testid="set-password-{{ e.id }}"
+                      data-employee-id="{{ e.id }}"
+                      data-employee-name="{{ e.name }}"
+                      onclick="openSetPasswordModal(this.dataset.employeeId, this.dataset.employeeName)"
+                      class="rounded-lg bg-sky-50 px-2.5 py-1.5 text-xs font-semibold text-sky-700 ring-1 ring-sky-200 transition-colors hover:bg-sky-100">Set password</button>
+              {% if e.has_login_configured %}
+                {% if e.account_status == 'Active' %}
+                <form method="post" action="{{ url_for('employee_deactivate', employee_id=e.id) }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                  <button type="submit" data-testid="deactivate-employee-{{ e.id }}"
+                          class="rounded-lg bg-amber-50 px-2.5 py-1.5 text-xs font-semibold text-amber-700 ring-1 ring-amber-200 transition-colors hover:bg-amber-100">Deactivate</button>
+                </form>
+                {% else %}
+                <form method="post" action="{{ url_for('employee_activate', employee_id=e.id) }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                  <button type="submit" data-testid="activate-employee-{{ e.id }}"
+                          class="rounded-lg bg-emerald-50 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200 transition-colors hover:bg-emerald-100">Activate</button>
+                </form>
+                {% endif %}
+              {% endif %}
+              <button type="button" data-testid="edit-employee-{{ e.id }}"
+                      data-employee='{{ e.to_dict() | tojson }}'
+                      onclick="openEmployeeModal(JSON.parse(this.dataset.employee))"
+                      class="rounded-lg bg-slate-100 px-2.5 py-1.5 text-xs font-semibold text-slate-700 ring-1 ring-slate-200 transition-colors hover:bg-slate-200">Edit</button>
+              <form method="post" action="{{ url_for('employee_delete', employee_id=e.id) }}" onsubmit="return confirm('Delete {{ e.name }}?')">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <button type="submit" data-testid="delete-employee-{{ e.id }}"
+                        class="rounded-lg bg-rose-50 px-2.5 py-1.5 text-xs font-semibold text-rose-600 ring-1 ring-rose-200 transition-colors hover:bg-rose-100">Delete</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div id="employeeModal" data-testid="employee-modal" class="modal fixed inset-0 z-50 hidden items-center justify-center bg-ink-900/60 p-4 backdrop-blur-sm">
+  <div class="modal-panel w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
+    <div class="flex items-start justify-between">
+      <h2 id="employeeModalTitle" class="font-display text-lg font-semibold text-ink-900">Add employee</h2>
+      <button type="button" onclick="closeModal('employeeModal')" data-testid="employee-modal-close" class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100">✕</button>
+    </div>
+    <form id="employeeForm" method="post" action="{{ url_for('employee_create') }}" class="mt-5 grid gap-4 sm:grid-cols-2">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div>
+        <label class="text-xs font-semibold uppercase tracking-widest text-slate-400" for="e_name">Full name</label>
+        <input id="e_name" name="name" required data-testid="employee-name-input"
+               class="mt-2 w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-ink-900">
+      </div>
+      <div>
+        <label class="text-xs font-semibold uppercase tracking-widest text-slate-400" for="e_email">Email</label>
+        <input id="e_email" name="email" type="email" required data-testid="employee-email-input"
+               class="mt-2 w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-ink-900">
+      </div>
+      <div>
+        <label class="text-xs font-semibold uppercase tracking-widest text-slate-400" for="e_dept">Department</label>
+        <input id="e_dept" name="department" value="General" data-testid="employee-department-input"
+               class="mt-2 w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-ink-900">
+      </div>
+      <div>
+        <label class="text-xs font-semibold uppercase tracking-widest text-slate-400" for="e_title">Job title</label>
+        <input id="e_title" name="job_title" data-testid="employee-title-input"
+               class="mt-2 w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-ink-900">
+      </div>
+      <div class="sm:col-span-2 flex justify-end gap-2 pt-1">
+        <button type="button" onclick="closeModal('employeeModal')" class="rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-500 hover:bg-slate-100">Cancel</button>
+        <button type="submit" data-testid="employee-save-button"
+                class="rounded-xl bg-ink-900 px-5 py-2.5 text-sm font-semibold text-white transition-transform duration-200 hover:-translate-y-0.5">Save employee</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Set/reset employee password -->
+<div id="setPasswordModal" data-testid="set-password-modal" class="modal fixed inset-0 z-50 hidden items-center justify-center bg-ink-900/60 p-4 backdrop-blur-sm">
+  <div class="modal-panel w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+    <div class="flex items-start justify-between">
+      <div>
+        <h2 class="font-display text-lg font-semibold text-ink-900">Set employee password</h2>
+        <p id="setPasswordEmployeeLabel" class="mt-1 text-sm text-slate-500" data-testid="set-password-employee-label"></p>
+      </div>
+      <button type="button" onclick="closeModal('setPasswordModal')" data-testid="set-password-modal-close" class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100">✕</button>
+    </div>
+    <form id="setPasswordForm" method="post" class="mt-5 space-y-4">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div>
+        <label class="text-xs font-semibold uppercase tracking-widest text-slate-400" for="sp_new_password">New password</label>
+        <input id="sp_new_password" name="new_password" type="password" required minlength="8" autocomplete="new-password" data-testid="set-password-new-input"
+               class="mt-2 w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-ink-900">
+        <p class="mt-1 text-xs text-slate-400">Minimum 8 characters. Not shown or logged anywhere after this is submitted.</p>
+      </div>
+      <div>
+        <label class="text-xs font-semibold uppercase tracking-widest text-slate-400" for="sp_confirm_password">Confirm password</label>
+        <input id="sp_confirm_password" name="confirm_password" type="password" required minlength="8" autocomplete="new-password" data-testid="set-password-confirm-input"
+               class="mt-2 w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-ink-900">
+      </div>
+      <p class="text-xs text-slate-400">Setting a password does not activate the account. Use "Activate" separately once credentials are configured.</p>
+      <div class="flex justify-end gap-2 pt-1">
+        <button type="button" onclick="closeModal('setPasswordModal')" class="rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-500 hover:bg-slate-100">Cancel</button>
+        <button type="submit" data-testid="set-password-submit-button"
+                class="rounded-xl bg-sky-600 px-5 py-2.5 text-sm font-semibold text-white transition-transform duration-200 hover:-translate-y-0.5">Save password</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>initEmployeesTable();</script>
+{% endblock %}

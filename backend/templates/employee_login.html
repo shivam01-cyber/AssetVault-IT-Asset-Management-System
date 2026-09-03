@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <title>Employee Sign in · AssetVault ITAM</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Outfit', sans-serif; }
+    .display { font-family: 'Sora', sans-serif; }
+    .grain::before { content:''; position:absolute; inset:0; opacity:.05; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.9'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  </style>
+</head>
+<body class="min-h-screen bg-[#0a1020] text-slate-200">
+  <div class="grain relative flex min-h-screen items-center justify-center px-5 py-12">
+    <div class="relative w-full max-w-md">
+      <div class="mb-8 flex items-center gap-3">
+        <div class="grid h-11 w-11 place-items-center rounded-xl bg-sky-400 display text-lg font-bold text-[#0a1020]">AV</div>
+        <div>
+          <p class="display text-lg font-semibold text-white">AssetVault</p>
+          <p class="text-xs text-slate-500">Employee Portal</p>
+        </div>
+      </div>
+
+      <div class="rounded-2xl border border-white/10 bg-white/5 p-7 backdrop-blur">
+        <span data-testid="employee-login-badge" class="inline-flex items-center rounded-full bg-sky-400/10 px-2.5 py-1 text-xs font-semibold text-sky-300 ring-1 ring-sky-400/30">Employee Login</span>
+        <h1 class="mt-3 display text-3xl font-semibold tracking-tight text-white">Sign in to your portal</h1>
+        <p class="mt-2 text-sm text-slate-400">View your assigned assets and account details.</p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% for category, message in messages %}
+          <div data-testid="employee-login-error" class="mt-5 rounded-xl border border-rose-400/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-300">{{ message }}</div>
+          {% endfor %}
+        {% endwith %}
+
+        <form method="post" class="mt-6 space-y-4" data-testid="employee-login-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <div>
+            <label class="text-xs font-semibold uppercase tracking-widest text-slate-500" for="email">Email</label>
+            <input id="email" name="email" type="email" required autocomplete="username" value="{{ request.form.get('email', '') }}"
+                   data-testid="employee-login-email-input"
+                   class="mt-2 w-full rounded-xl border border-white/10 bg-[#111a2e] px-4 py-3 text-sm text-white outline-none transition-colors placeholder:text-slate-600 focus:border-sky-400"
+                   placeholder="you@itam.com">
+          </div>
+          <div>
+            <label class="text-xs font-semibold uppercase tracking-widest text-slate-500" for="password">Password</label>
+            <input id="password" name="password" type="password" required autocomplete="current-password"
+                   data-testid="employee-login-password-input"
+                   class="mt-2 w-full rounded-xl border border-white/10 bg-[#111a2e] px-4 py-3 text-sm text-white outline-none transition-colors placeholder:text-slate-600 focus:border-sky-400"
+                   placeholder="••••••••">
+          </div>
+          <button type="submit" data-testid="employee-login-submit-button"
+                  class="w-full rounded-xl bg-sky-400 px-4 py-3 text-sm font-semibold text-[#0a1020] transition-transform duration-200 hover:-translate-y-0.5 hover:bg-sky-300">
+            Sign in
+          </button>
+        </form>
+
+        <p class="mt-6 text-xs text-slate-500">
+          Don't have login access yet? Contact your administrator to have your account configured.
+        </p>
+        <a href="{{ url_for('login') }}" data-testid="go-to-admin-login-link" class="mt-4 block text-center text-xs text-slate-500 hover:text-slate-300">
+          Administrator? Sign in here →
+        </a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

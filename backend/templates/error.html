@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Something went wrong · AssetVault</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="grid min-h-screen place-items-center bg-[#0a1020] px-6 text-slate-300">
+  <div data-testid="error-page" class="max-w-md rounded-2xl border border-white/10 bg-white/5 p-8 text-center">
+    <p class="text-5xl">⚠</p>
+    <h1 class="mt-4 text-xl font-semibold text-white">Service temporarily unavailable</h1>
+    <p class="mt-2 text-sm text-slate-400">{{ message }}</p>
+    <a href="/api/dashboard" class="mt-6 inline-block rounded-xl bg-[#c9f24d] px-5 py-2.5 text-sm font-semibold text-[#0a1020]">Retry</a>
+  </div>
+</body>
+</html>

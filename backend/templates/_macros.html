@@ -1,0 +1,6 @@
+{% macro badge(status) -%}
+{% set map = {'Available': 'bg-emerald-50 text-emerald-700 ring-emerald-200', 'Assigned': 'bg-sky-50 text-sky-700 ring-sky-200', 'Under Repair': 'bg-amber-50 text-amber-700 ring-amber-200', 'Retired': 'bg-slate-100 text-slate-600 ring-slate-200'} -%}
+<span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 {{ map.get(status, 'bg-slate-100 text-slate-600 ring-slate-200') }}">
+  <span class="h-1.5 w-1.5 rounded-full bg-current opacity-70"></span>{{ status }}
+</span>
+{%- endmacro %}

@@ -1,0 +1,13 @@
+{% extends "employee/base_employee.html" %}
+{% set active_page = 'issues' if page_title == 'My Issues' else 'notifications' %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block heading %}{{ page_title }}{% endblock %}
+{% block subheading %}{% endblock %}
+
+{% block content %}
+<section class="rounded-2xl bg-white p-6 shadow-[0_1px_3px_rgba(15,23,42,0.06)] ring-1 ring-slate-200/70" data-testid="employee-placeholder-{{ active_page }}">
+  <p class="rounded-xl border border-dashed border-slate-200 py-16 text-center text-sm text-slate-400">
+    {{ message }}
+  </p>
+</section>
+{% endblock %}

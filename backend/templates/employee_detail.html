@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge %}
+{% block title %}{{ employee.name }}{% endblock %}
+{% block heading %}{{ employee.name }}{% endblock %}
+{% block subheading %}Employee ID #{{ employee.id }} · {{ employee.department }}{% endblock %}
+
+{% block header_action %}
+<a href="{{ url_for('employees_list') }}" data-testid="back-to-employees-link"
+   class="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-100">
+  ← Back to directory
+</a>
+{% endblock %}
+
+{% block content %}
+<section class="rounded-2xl bg-white p-6 shadow-[0_1px_3px_rgba(15,23,42,0.06)] ring-1 ring-slate-200/70" data-testid="employee-core-details">
+  <h2 class="font-display text-lg font-semibold text-ink-900">Employee details</h2>
+  <dl class="mt-5 grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div>
+      <dt class="text-xs font-semibold uppercase tracking-widest text-slate-400">Employee ID</dt>
+      <dd class="mt-1 text-sm font-medium text-ink-900" data-testid="emp-detail-id">#{{ employee.id }}</dd>
+    </div>
+    <div>
+      <dt class="text-xs font-semibold uppercase tracking-widest text-slate-400">Name</dt>
+      <dd class="mt-1 text-sm text-ink-900" data-testid="emp-detail-name">{{ employee.name }}</dd>
+    </div>
+    <div>
+      <dt class="text-xs font-semibold uppercase tracking-widest text-slate-400">Email</dt>
+      <dd class="mt-1 text-sm text-ink-900" data-testid="emp-detail-email">{{ employee.email }}</dd>
+    </div>
+    <div>
+      <dt class="text-xs font-semibold uppercase tracking-widest text-slate-400">Department</dt>
+      <dd class="mt-1 text-sm text-ink-900" data-testid="emp-detail-department">{{ employee.department }}</dd>
+    </div>
+    <div>
+      <dt class="text-xs font-semibold uppercase tracking-widest text-slate-400">Job title</dt>
+      <dd class="mt-1 text-sm text-ink-900" data-testid="emp-detail-title">{{ employee.job_title or '—' }}</dd>
+    </div>
+  </dl>
+</section>
+
+<section class="mt-6 rounded-2xl bg-white p-6 shadow-[0_1px_3px_rgba(15,23,42,0.06)] ring-1 ring-slate-200/70" data-testid="employee-current-assets">
+  <h2 class="font-display text-lg font-semibold text-ink-900">Current assigned assets</h2>
+  {% if current_assets %}
+  <div class="mt-5 overflow-x-auto">
+    <table class="w-full text-left text-sm">
+      <thead>
+        <tr class="border-b border-slate-200 text-xs uppercase tracking-widest text-slate-400">
+          <th class="px-3 py-2">Asset</th>
+          <th class="px-3 py-2">Serial</th>
+          <th class="px-3 py-2">Status</th>
+          <th class="px-3 py-2">Condition</th>
+          <th class="px-3 py-2">Assignment date</th>
+          <th class="px-3 py-2">Expected return</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        {% for a in current_assets %}
+        <tr data-testid="employee-asset-row-{{ a.id }}">
+          <td class="px-3 py-3 font-medium text-ink-900">
+            <a href="{{ url_for('asset_detail', asset_id=a.id) }}" class="hover:text-sky-600 hover:underline">{{ a.device_name }}</a>
+          </td>
+          <td class="px-3 py-3 font-mono text-xs text-slate-500">{{ a.serial_number }}</td>
+          <td class="px-3 py-3">{{ badge(a.status) }}</td>
+          <td class="px-3 py-3 text-slate-500">{{ a.condition_status or '—' }}</td>
+          <td class="px-3 py-3 text-slate-500">{{ a.assigned_date or '—' }}</td>
+          <td class="px-3 py-3 text-slate-500">
+            {% set matching = history | selectattr('asset_id', 'equalto', a.id) | selectattr('action', 'equalto', 'assigned') | list %}
+            {{ (matching | first).expected_return_date if matching else 'Not set' }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="mt-5 rounded-xl border border-dashed border-slate-200 py-8 text-center text-sm text-slate-400" data-testid="employee-no-assets">
+    No assets currently assigned to this employee.
+  </p>
+  {% endif %}
+</section>
+
+<section class="mt-6 rounded-2xl bg-white p-6 shadow-[0_1px_3px_rgba(15,23,42,0.06)] ring-1 ring-slate-200/70" data-testid="employee-assignment-history">
+  <h2 class="font-display text-lg font-semibold text-ink-900">Assignment history</h2>
+  {% if history %}
+  <div class="mt-5 overflow-x-auto">
+    <table class="w-full text-left text-sm">
+      <thead>
+        <tr class="border-b border-slate-200 text-xs uppercase tracking-widest text-slate-400">
+          <th class="px-3 py-2">Action</th>
+          <th class="px-3 py-2">Asset</th>
+          <th class="px-3 py-2">Date</th>
+          <th class="px-3 py-2">Expected return</th>
+          <th class="px-3 py-2">Condition</th>
+          <th class="px-3 py-2">Remarks</th>
+          <th class="px-3 py-2">By</th>
+          <th class="px-3 py-2">Recorded</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        {% for h in history %}
+        <tr data-testid="employee-history-row-{{ h.id }}">
+          <td class="px-3 py-3">
+            <span class="rounded-full px-2.5 py-1 text-xs font-semibold {% if h.action == 'assigned' %}bg-sky-50 text-sky-700{% else %}bg-slate-100 text-slate-600{% endif %}">{{ h.action | capitalize }}</span>
+          </td>
+          <td class="px-3 py-3 text-ink-900">
+            {% if h.asset %}<a href="{{ url_for('asset_detail', asset_id=h.asset.id) }}" class="hover:text-sky-600 hover:underline">{{ h.asset.device_name }}</a>{% else %}Deleted asset{% endif %}
+          </td>
+          <td class="px-3 py-3 text-slate-600">{{ h.action_date }}</td>
+          <td class="px-3 py-3 text-slate-500">{{ h.expected_return_date or '—' }}</td>
+          <td class="px-3 py-3 text-slate-500">{{ h.condition_at_assignment or '—' }}</td>
+          <td class="px-3 py-3 text-slate-500">{{ h.remarks or '—' }}</td>
+          <td class="px-3 py-3 text-slate-500">{{ h.assigned_by.name if h.assigned_by else 'Not recorded' }}</td>
+          <td class="px-3 py-3 text-slate-400">{{ h.created_at.strftime('%Y-%m-%d %H:%M') if h.created_at else '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="mt-5 rounded-xl border border-dashed border-slate-200 py-8 text-center text-sm text-slate-400" data-testid="employee-history-empty">
+    No assignment history recorded yet for this employee.
+  </p>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,65 @@
+{% macro status_badge(status) -%}
+{% set map = {
+  'Open': 'bg-sky-50 text-sky-700 ring-sky-200',
+  'Acknowledged': 'bg-indigo-50 text-indigo-700 ring-indigo-200',
+  'In Progress': 'bg-amber-50 text-amber-700 ring-amber-200',
+  'Waiting For Part': 'bg-orange-50 text-orange-700 ring-orange-200',
+  'Resolved': 'bg-emerald-50 text-emerald-700 ring-emerald-200',
+  'Closed': 'bg-slate-100 text-slate-600 ring-slate-200',
+  'Reopened': 'bg-rose-50 text-rose-700 ring-rose-200',
+} -%}
+<span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 {{ map.get(status, 'bg-slate-100 text-slate-600 ring-slate-200') }}">
+  <span class="h-1.5 w-1.5 rounded-full bg-current opacity-70"></span>{{ status }}
+</span>
+{%- endmacro %}
+
+{% macro priority_badge(priority) -%}
+{% set map = {
+  'Low': 'bg-slate-100 text-slate-600 ring-slate-200',
+  'Medium': 'bg-sky-50 text-sky-700 ring-sky-200',
+  'High': 'bg-amber-50 text-amber-700 ring-amber-200',
+  'Critical': 'bg-rose-50 text-rose-700 ring-rose-200',
+} -%}
+<span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 {{ map.get(priority, 'bg-slate-100 text-slate-600 ring-slate-200') }}">{{ priority }}</span>
+{%- endmacro %}
+
+{% macro timeline(history) %}
+<ol class="relative space-y-6 border-l-2 border-slate-100 pl-6" data-testid="ticket-timeline">
+  {% for h in history %}
+  <li class="relative" data-testid="timeline-event-{{ h.id }}">
+    <span class="absolute -left-[1.72rem] top-1 h-3 w-3 rounded-full border-2 border-white
+      {% if h.event_type in ('RESOLVED',) %}bg-emerald-500
+      {% elif h.event_type in ('CLOSED',) %}bg-slate-400
+      {% elif h.event_type == 'REOPENED' %}bg-rose-500
+      {% else %}bg-sky-500{% endif %}"></span>
+    <p class="text-sm font-medium text-ink-900">
+      {% if h.event_type == 'STATUS_CHANGED' %}
+        {% if h.old_status %}Status changed from <strong>{{ h.old_status }}</strong> to <strong>{{ h.new_status }}</strong>{% else %}Ticket created — status <strong>{{ h.new_status }}</strong>{% endif %}
+      {% elif h.event_type == 'ASSIGNED' %}
+        Ticket assigned
+      {% elif h.event_type == 'EXPECTED_DATE_CHANGED' %}
+        Expected resolution date updated
+      {% elif h.event_type == 'RESOLVED' %}
+        Marked <strong>Resolved</strong>
+      {% elif h.event_type == 'CLOSED' %}
+        Ticket <strong>Closed</strong>
+      {% elif h.event_type == 'REOPENED' %}
+        Ticket <strong>Reopened</strong>
+      {% else %}
+        {{ h.event_type }}
+      {% endif %}
+    </p>
+    {% if h.note %}<p class="mt-0.5 text-sm text-slate-500">{{ h.note }}</p>{% endif %}
+    <p class="mt-1 text-xs text-slate-400">{{ h.actor_name }} · {{ h.created_at.strftime('%Y-%m-%d %H:%M') if h.created_at else '' }}</p>
+  </li>
+  {% endfor %}
+</ol>
+{% endmacro %}
+
+{% macro attachment_link(a) -%}
+<a href="{{ url_for('attachment_download', attachment_id=a.id) }}" data-testid="attachment-link-{{ a.id }}"
+   class="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 py-1.5 text-xs font-medium text-slate-700 ring-1 ring-slate-200 hover:bg-slate-200">
+  <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v12m0 0l-4-4m4 4l4-4M4 20h16"/></svg>
+  {{ a.original_filename }}
+</a>
+{%- endmacro %}

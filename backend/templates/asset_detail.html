@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge %}
+{% block title %}{{ asset.device_name }}{% endblock %}
+{% block heading %}{{ asset.device_name }}{% endblock %}
+{% block subheading %}Asset ID #{{ asset.id }} · {{ asset.serial_number }}{% endblock %}
+
+{% block header_action %}
+<a href="{{ url_for('assets_list') }}" data-testid="back-to-assets-link"
+   class="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-100">
+  ← Back to inventory
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="grid gap-6 lg:grid-cols-3">
+  <!-- Core asset details -->
+  <section class="rounded-2xl bg-white p-6 shadow-[0_1px_3px_rgba(15,23,42,0.06)] ring-1 ring-slate-200/70 lg:col-span-2" data-testid="asset-core-details">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <h2 class="font-display text-lg font-semibold text-ink-900">Asset details</h2>
+      {{ badge(asset.status) }}
+    </div>
+    <dl class="mt-5 grid gap-x-6 gap-y-4 sm:grid-cols-2">
+      <div>
+        <dt class="text-xs font-semibold uppercase tracking-widest text-slate-400">Asset ID</dt>
+        <dd class="mt-1 text-sm font-medium text-ink-900" data-testid="detail-asset-id">#{{ asset.id }}</dd>
+      </div>
+      <div>
+        <dt class="text-xs font-semibold uppercase tracking-widest text-slate-400">Serial number</dt>
+        <dd class="mt-1 font-mono text-sm text-ink-900" data-testid="detail-serial">{{ asset.serial_number }}</dd>
+      </div>
+      <div>
+        <dt class="text-xs font-semibold uppercase tracking-widest text-slate-400">Category</dt>
+        <dd class="mt-1 text-sm text-ink-900" data-testid="detail-category">{{ asset.category }}</dd>
+      </div>
+      <div>
+        <dt class="text-xs font-semibold uppercase tracking-widest text-slate-400">Purchase date</dt>
+        <dd class="mt-1 text-sm text-ink-900" data-testid="detail-purchase-date">{{ asset.purchase_date or '—' }}</dd>
+      </div>
+      <div>
+        <dt class="text-xs font-semibold uppercase tracking-widest text-slate-400">Current condition</dt>
+        <dd class="mt-1 text-sm text-ink-900" data-testid="detail-condition">{{ asset.condition_status or 'Not recorded' }}</dd>
+      </div>
+      <div>
+        <dt class="text-xs font-semibold uppercase tracking-widest text-slate-400">Warranty</dt>
+        <dd class="mt-1 text-sm text-slate-400" data-testid="detail-warranty">{{ asset.warranty_provider or "Provider not recorded" }} · {{ asset.warranty_expiry or "No expiry set" }}</dd>
+      </div>
+      <div class="sm:col-span-2">
+        <dt class="text-xs font-semibold uppercase tracking-widest text-slate-400">Current remarks</dt>
+        <dd class="mt-1 text-sm text-ink-900" data-testid="detail-remarks">{{ asset.notes or '—' }}</dd>
+      </div>
+    </dl>
+  </section>
+
+  <!-- Current assignment -->
+  <section class="rounded-2xl bg-white p-6 shadow-[0_1px_3px_rgba(15,23,42,0.06)] ring-1 ring-slate-200/70" data-testid="asset-current-assignment">
+    <h2 class="font-display text-lg font-semibold text-ink-900">Current assignment</h2>
+    {% if asset.employee %}
+    <dl class="mt-5 space-y-4">
+      <div>
+        <dt class="text-xs font-semibold uppercase tracking-widest text-slate-400">Assigned employee</dt>
+        <dd class="mt-1 text-sm font-medium text-ink-900" data-testid="detail-assigned-employee">
+          <a href="{{ url_for('employee_detail', employee_id=asset.employee.id) }}" class="hover:text-sky-600 hover:underline">{{ asset.employee.name }}</a>
+        </dd>
+      </div>
+      <div>
+        <dt class="text-xs font-semibold uppercase tracking-widest text-slate-400">Employee ID</dt>
+        <dd class="mt-1 text-sm text-ink-900" data-testid="detail-employee-id">#{{ asset.employee.id }}</dd>
+      </div>
+      <div>
+        <dt class="text-xs font-semibold uppercase tracking-widest text-slate-400">Assignment date</dt>
+        <dd class="mt-1 text-sm text-ink-900" data-testid="detail-assignment-date">{{ asset.assigned_date or '—' }}</dd>
+      </div>
+      {% set latest = history | selectattr('action', 'equalto', 'assigned') | list | first %}
+      <div>
+        <dt class="text-xs font-semibold uppercase tracking-widest text-slate-400">Expected return date</dt>
+        <dd class="mt-1 text-sm text-ink-900" data-testid="detail-expected-return">{{ (latest.expected_return_date if latest else None) or 'Not set' }}</dd>
+      </div>
+    </dl>
+    {% else %}
+    <p class="mt-5 rounded-xl border border-dashed border-slate-200 py-8 text-center text-sm text-slate-400" data-testid="detail-no-assignment">
+      This asset is not currently assigned to anyone.
+    </p>
+    {% endif %}
+  </section>
+</div>
+
+<!-- Assignment history -->
+<section class="mt-6 rounded-2xl bg-white p-6 shadow-[0_1px_3px_rgba(15,23,42,0.06)] ring-1 ring-slate-200/70" data-testid="asset-assignment-history">
+  <h2 class="font-display text-lg font-semibold text-ink-900">Assignment history</h2>
+  {% if history %}
+  <div class="mt-5 overflow-x-auto">
+    <table class="w-full text-left text-sm">
+      <thead>
+        <tr class="border-b border-slate-200 text-xs uppercase tracking-widest text-slate-400">
+          <th class="px-3 py-2">Action</th>
+          <th class="px-3 py-2">Employee</th>
+          <th class="px-3 py-2">Date</th>
+          <th class="px-3 py-2">Expected return</th>
+          <th class="px-3 py-2">Condition</th>
+          <th class="px-3 py-2">Remarks</th>
+          <th class="px-3 py-2">By</th>
+          <th class="px-3 py-2">Recorded</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        {% for h in history %}
+        <tr data-testid="asset-history-row-{{ h.id }}">
+          <td class="px-3 py-3">
+            <span class="rounded-full px-2.5 py-1 text-xs font-semibold {% if h.action == 'assigned' %}bg-sky-50 text-sky-700{% else %}bg-slate-100 text-slate-600{% endif %}">{{ h.action | capitalize }}</span>
+          </td>
+          <td class="px-3 py-3 text-ink-900">{{ h.employee.name if h.employee else '—' }}</td>
+          <td class="px-3 py-3 text-slate-600">{{ h.action_date }}</td>
+          <td class="px-3 py-3 text-slate-500">{{ h.expected_return_date or '—' }}</td>
+          <td class="px-3 py-3 text-slate-500">{{ h.condition_at_assignment or '—' }}</td>
+          <td class="px-3 py-3 text-slate-500">{{ h.remarks or '—' }}</td>
+          <td class="px-3 py-3 text-slate-500">{{ h.assigned_by.name if h.assigned_by else 'Not recorded' }}</td>
+          <td class="px-3 py-3 text-slate-400">{{ h.created_at.strftime('%Y-%m-%d %H:%M') if h.created_at else '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="mt-5 rounded-xl border border-dashed border-slate-200 py-8 text-center text-sm text-slate-400" data-testid="asset-history-empty">
+    No assignment history recorded yet for this asset.
+  </p>
+  {% endif %}
+</section>
+
+<section class="mt-6 grid gap-6 sm:grid-cols-2">
+  <div class="rounded-2xl bg-white p-6 shadow-[0_1px_3px_rgba(15,23,42,0.06)] ring-1 ring-slate-200/70"><h2 class="font-display text-base font-semibold text-ink-900">Warranty status</h2><div class="mt-4 flex items-center gap-3"><span class="inline-flex items-center rounded-full px-3 py-1.5 text-xs font-semibold ring-1 {{ warranty.class }}">{{ warranty.label }}</span>{% if asset.warranty_expiry %}<span class="text-sm text-slate-500">Expires {{ asset.warranty_expiry }}</span>{% endif %}</div><p class="mt-3 text-sm text-slate-500">{{ asset.warranty_provider or 'Warranty provider not recorded.' }}</p></div>
+  <div class="rounded-2xl bg-white p-6 shadow-[0_1px_3px_rgba(15,23,42,0.06)] ring-1 ring-slate-200/70" data-testid="asset-qr-card"><div class="flex items-start justify-between gap-4"><div><h2 class="font-display text-base font-semibold text-ink-900">QR asset tracking</h2><p class="mt-1 text-sm text-slate-500">Scan this code to open the authorized asset view.</p></div><img src="{{ url_for('asset_qr_image', asset_id=asset.id) }}" alt="QR code for {{ asset.device_name }}" class="h-28 w-28 rounded-lg border border-slate-200 p-1" data-testid="asset-qr-image"></div><a href="{{ url_for('asset_qr_image', asset_id=asset.id) }}" download class="mt-4 inline-block rounded-lg bg-ink-900 px-3 py-2 text-xs font-semibold text-white">Download QR</a></div>
+</section>
+{% endblock %}

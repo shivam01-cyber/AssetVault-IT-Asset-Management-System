@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% from "_ticket_macros.html" import status_badge, priority_badge, timeline, attachment_link %}
+{% block title %}{{ ticket.ticket_number }}{% endblock %}
+{% block heading %}{{ ticket.ticket_number }}{% endblock %}
+{% block subheading %}{{ ticket.employee.name if ticket.employee else '—' }} · {{ ticket.employee.department if ticket.employee else '—' }}{% endblock %}
+
+{% block header_action %}
+<a href="{{ url_for('tickets_list') }}" data-testid="back-to-tickets-link"
+   class="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-100">
+  ← Back to Helpdesk
+</a>
+{% endblock %}
+
+{% block content %}
+{% set initial_attachments = ticket.attachments | selectattr('message_id', 'equalto', none) | list %}
+<div class="grid gap-6 lg:grid-cols-3">
+  <!-- Ticket info -->
+  <section class="rounded-2xl bg-white p-6 shadow-[0_1px_3px_rgba(15,23,42,0.06)] ring-1 ring-slate-200/70 lg:col-span-2" data-testid="admin-ticket-summary">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <h2 class="font-display text-lg font-semibold text-ink-900">Ticket details</h2>
+      <div class="flex gap-2">{{ priority_badge(ticket.priority) }}{{ status_badge(ticket.status) }}</div>
+    </div>
+    <dl class="mt-5 grid gap-x-6 gap-y-4 sm:grid-cols-2">
+      <div>
+        <dt class="text-xs font-semibold uppercase tracking-widest text-slate-400">Employee</dt>
+        <dd class="mt-1 text-sm font-medium text-ink-900" data-testid="admin-ticket-employee">
+          {% if ticket.employee %}<a href="{{ url_for('employee_detail', employee_id=ticket.employee.id) }}" class="hover:text-sky-600 hover:underline">{{ ticket.employee.name }}</a>{% else %}—{% endif %}
+        </dd>
+      </div>
+      <div>
+        <dt class="text-xs font-semibold uppercase tracking-widest text-slate-400">Department</dt>
+        <dd class="mt-1 text-sm text-ink-900">{{ ticket.employee.department if ticket.employee else '—' }}</dd>
+      </div>
+      <div>
+        <dt class="text-xs font-semibold uppercase tracking-widest text-slate-400">Asset</dt>
+        <dd class="mt-1 text-sm font-medium text-ink-900" data-testid="admin-ticket-asset">
+          {% if ticket.asset %}<a href="{{ url_for('asset_detail', asset_id=ticket.asset.id) }}" class="hover:text-sky-600 hover:underline">{{ ticket.asset.device_name }}</a>{% else %}Deleted asset{% endif %}
+        </dd>
+      </div>
+      <div>
+        <dt class="text-xs font-semibold uppercase tracking-widest text-slate-400">Category</dt>
+        <dd class="mt-1 text-sm text-ink-900">{{ ticket.category }}</dd>
+      </div>
+      <div>
+        <dt class="text-xs font-semibold uppercase tracking-widest text-slate-400">Assigned support</dt>
+        <dd class="mt-1 text-sm text-ink-900" data-testid="admin-ticket-assigned">{{ ticket.assigned_admin.name if ticket.assigned_admin else 'Unassigned' }}</dd>
+      </div>
+      <div>
+        <dt class="text-xs font-semibold uppercase tracking-widest text-slate-400">Created</dt>
+        <dd class="mt-1 text-sm text-ink-900">{{ ticket.created_at.strftime('%Y-%m-%d %H:%M') if ticket.created_at else '—' }}</dd>
+      </div>
+      <div class="sm:col-span-2">
+        <dt class="text-xs font-semibold uppercase tracking-widest text-slate-400">Problem description</dt>
+        <dd class="mt-1 whitespace-pre-wrap text-sm text-ink-900">{{ ticket.description }}</dd>
+      </div>
+      {% if initial_attachments %}
+      <div class="sm:col-span-2">
+        <dt class="text-xs font-semibold uppercase tracking-widest text-slate-400">Attachments</dt>
+        <dd class="mt-2 flex flex-wrap gap-2">{% for a in initial_attachments %}{{ attachment_link(a) }}{% endfor %}</dd>
+      </div>
+      {% endif %}
+      {% if ticket.reopen_count %}
+      <div class="sm:col-span-2">
+        <dt class="text-xs font-semibold uppercase tracking-widest text-slate-400">Reopened</dt>
+        <dd class="mt-1 text-sm text-rose-600">{{ ticket.reopen_count }} time{{ 's' if ticket.reopen_count != 1 else '' }}</dd>
+      </div>
+      {% endif %}
+    </dl>
+  </section>
+
+  <!-- Timeline -->
+  <section class="rounded-2xl bg-white p-6 shadow-[0_1px_3px_rgba(15,23,42,0.06)] ring-1 ring-slate-200/70" data-testid="admin-ticket-timeline-card">
+    <h2 class="font-display text-lg font-semibold text-ink-900">Timeline</h2>
+    <div class="mt-5">
+      {% if ticket.history %}{{ timeline(ticket.history) }}{% else %}
+      <p class="rounded-xl border border-dashed border-slate-200 py-8 text-center text-sm text-slate-400">No history yet.</p>
+      {% endif %}
+    </div>
+  </section>
+</div>
+
+<!-- Admin actions -->
+<section class="mt-6 grid gap-6 lg:grid-cols-3" data-testid="admin-ticket-actions">
+  <!-- Status -->
+  <div class="rounded-2xl bg-white p-6 shadow-[0_1px_3px_rgba(15,23,42,0.06)] ring-1 ring-slate-200/70">
+    <h3 class="font-display text-base font-semibold text-ink-900">Change status</h3>
+    <form method="post" action="{{ url_for('ticket_status_change', ticket_id=ticket.id) }}" class="mt-4 space-y-3" data-testid="status-change-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <select name="status" required data-testid="status-select"
+              class="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-ink-900">
+        {% for s in ticket_statuses %}<option value="{{ s }}" {% if ticket.status == s %}selected{% endif %}>{{ s }}</option>{% endfor %}
+      </select>
+      <div id="resolutionNotesField" class="{% if ticket.status == 'Resolved' %}block{% else %}hidden{% endif %}">
+        <label class="text-xs font-semibold uppercase tracking-widest text-slate-400" for="resolution_notes">Resolution notes (required to resolve)</label>
+        <textarea id="resolution_notes" name="resolution_notes" rows="3" maxlength="4000" data-testid="resolution-notes-input"
+                  class="mt-2 w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-ink-900">{{ ticket.resolution_notes or '' }}</textarea>
+      </div>
+      <div>
+        <label class="text-xs font-semibold uppercase tracking-widest text-slate-400" for="status_note">Internal note (optional)</label>
+        <input id="status_note" name="note" maxlength="1000" data-testid="status-note-input"
+               class="mt-2 w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-ink-900">
+      </div>
+      <button type="submit" data-testid="status-change-submit"
+              class="w-full rounded-xl bg-ink-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-ink-700">Update status</button>
+    </form>
+  </div>
+
+  <!-- Assign -->
+  <div class="rounded-2xl bg-white p-6 shadow-[0_1px_3px_rgba(15,23,42,0.06)] ring-1 ring-slate-200/70">
+    <h3 class="font-display text-base font-semibold text-ink-900">Assign support</h3>
+    <form method="post" action="{{ url_for('ticket_assign', ticket_id=ticket.id) }}" class="mt-4 space-y-3" data-testid="assign-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <select name="admin_id" required data-testid="assign-admin-select"
+              class="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-ink-900">
+        <option value="">Select admin…</option>
+        {% for a in admins %}<option value="{{ a.id }}" {% if ticket.assigned_admin_id == a.id %}selected{% endif %}>{{ a.name }}</option>{% endfor %}
+      </select>
+      <button type="submit" data-testid="assign-submit"
+              class="w-full rounded-xl bg-ink-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-ink-700">Assign</button>
+    </form>
+  </div>
+
+  <!-- Expected resolution date -->
+  <div class="rounded-2xl bg-white p-6 shadow-[0_1px_3px_rgba(15,23,42,0.06)] ring-1 ring-slate-200/70">
+    <h3 class="font-display text-base font-semibold text-ink-900">Expected resolution</h3>
+    <form method="post" action="{{ url_for('ticket_expected_resolution', ticket_id=ticket.id) }}" class="mt-4 space-y-3" data-testid="expected-resolution-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input type="date" name="expected_resolution_date" value="{{ ticket.expected_resolution_date or '' }}" data-testid="expected-resolution-input"
+             class="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-ink-900">
+      <button type="submit" data-testid="expected-resolution-submit"
+              class="w-full rounded-xl bg-ink-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-ink-700">Save date</button>
+    </form>
+  </div>
+</section>
+
+<!-- Conversation -->
+<section class="mt-6 rounded-2xl bg-white p-6 shadow-[0_1px_3px_rgba(15,23,42,0.06)] ring-1 ring-slate-200/70" data-testid="admin-ticket-conversation">
+  <h2 class="font-display text-lg font-semibold text-ink-900">Conversation</h2>
+  {% if ticket.messages %}
+  <div class="mt-5 space-y-4">
+    {% for m in ticket.messages %}
+    <div data-testid="admin-message-{{ m.id }}" class="rounded-xl p-4 {% if m.sender_role == 'admin' %}ml-0 mr-auto max-w-xl bg-slate-50{% else %}ml-auto mr-0 max-w-xl bg-sky-50{% endif %}">
+      <div class="flex items-baseline justify-between gap-3">
+        <p class="text-xs font-semibold text-ink-900">{{ m.sender_name }} <span class="font-normal text-slate-400">· {{ 'Employee' if m.sender_role == 'employee' else 'IT Support' }}</span></p>
+        <p class="text-xs text-slate-400">{{ m.created_at.strftime('%Y-%m-%d %H:%M') if m.created_at else '' }}</p>
+      </div>
+      <p class="mt-2 whitespace-pre-wrap text-sm text-ink-900">{{ m.message }}</p>
+      {% if m.attachments %}
+      <div class="mt-3 flex flex-wrap gap-2">{% for a in m.attachments %}{{ attachment_link(a) }}{% endfor %}</div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="mt-5 rounded-xl border border-dashed border-slate-200 py-8 text-center text-sm text-slate-400" data-testid="admin-no-messages">No messages yet.</p>
+  {% endif %}
+
+  <form method="post" action="{{ url_for('ticket_message', ticket_id=ticket.id) }}" enctype="multipart/form-data" class="mt-6 space-y-3 border-t border-slate-100 pt-5" data-testid="admin-reply-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label class="text-xs font-semibold uppercase tracking-widest text-slate-400" for="admin_message">Reply to employee</label>
+    <textarea id="admin_message" name="message" rows="3" required maxlength="4000" data-testid="admin-reply-message-input"
+              class="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-ink-900"></textarea>
+    <input type="file" name="attachment" accept=".jpg,.jpeg,.png,.pdf" data-testid="admin-reply-attachment-input"
+           class="block w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3.5 file:py-2 file:text-xs file:font-semibold file:text-slate-700 hover:file:bg-slate-200">
+    <div class="flex justify-end">
+      <button type="submit" data-testid="admin-reply-submit"
+              class="rounded-xl bg-sky-600 px-5 py-2.5 text-sm font-semibold text-white transition-transform duration-200 hover:-translate-y-0.5">Send reply</button>
+    </div>
+  </form>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const statusSelect = document.querySelector('[data-testid="status-select"]');
+  const resolutionField = document.getElementById('resolutionNotesField');
+  if (statusSelect && resolutionField) {
+    statusSelect.addEventListener('change', () => {
+      resolutionField.classList.toggle('hidden', statusSelect.value !== 'Resolved');
+    });
+  }
+</script>
+{% endblock %}

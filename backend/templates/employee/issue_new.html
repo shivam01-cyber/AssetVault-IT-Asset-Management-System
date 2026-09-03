@@ -1,0 +1,84 @@
+{% extends "employee/base_employee.html" %}
+{% set active_page = "issues" %}
+{% block title %}Report an Issue{% endblock %}
+{% block heading %}Report an Issue{% endblock %}
+{% block subheading %}This will be filed as a helpdesk ticket against one of your assigned assets{% endblock %}
+
+{% block header_action %}
+<a href="{{ url_for('employee_issues') }}" data-testid="back-to-issues-link"
+   class="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-100">
+  ← Back to my issues
+</a>
+{% endblock %}
+
+{% block content %}
+<section class="mx-auto max-w-2xl rounded-2xl bg-white p-6 shadow-[0_1px_3px_rgba(15,23,42,0.06)] ring-1 ring-slate-200/70" data-testid="report-issue-form-card">
+  {% if my_assets %}
+  <form method="post" action="{{ url_for('employee_issue_create') }}" enctype="multipart/form-data" class="space-y-5" data-testid="report-issue-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div>
+      <label class="text-xs font-semibold uppercase tracking-widest text-slate-400" for="asset_id">Asset</label>
+      <select id="asset_id" name="asset_id" required data-testid="report-issue-asset-select"
+              class="mt-2 w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-ink-900">
+        <option value="">Select an assigned asset…</option>
+        {% for a in my_assets %}
+        <option value="{{ a.id }}" {% if preselect_asset_id == a.id %}selected{% endif %}>{{ a.device_name }} · {{ a.serial_number }}</option>
+        {% endfor %}
+      </select>
+      <p class="mt-1 text-xs text-slate-400">Only assets currently assigned to you appear here.</p>
+    </div>
+
+    <div class="grid gap-4 sm:grid-cols-2">
+      <div>
+        <label class="text-xs font-semibold uppercase tracking-widest text-slate-400" for="category">Issue category</label>
+        <select id="category" name="category" required data-testid="report-issue-category-select"
+                class="mt-2 w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-ink-900">
+          <option value="">Select category…</option>
+          {% for c in ticket_categories %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="text-xs font-semibold uppercase tracking-widest text-slate-400" for="priority">Priority</label>
+        <select id="priority" name="priority" required data-testid="report-issue-priority-select"
+                class="mt-2 w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-ink-900">
+          <option value="">Select priority…</option>
+          {% for p in ticket_priorities %}<option value="{{ p }}">{{ p }}</option>{% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div>
+      <label class="text-xs font-semibold uppercase tracking-widest text-slate-400" for="description">Problem description</label>
+      <textarea id="description" name="description" rows="4" required maxlength="4000" data-testid="report-issue-description-input"
+                class="mt-2 w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-ink-900"
+                placeholder="Describe what's happening in as much detail as you can…"></textarea>
+    </div>
+
+    <div>
+      <label class="text-xs font-semibold uppercase tracking-widest text-slate-400" for="remarks">Additional remarks (optional)</label>
+      <textarea id="remarks" name="remarks" rows="2" maxlength="2000" data-testid="report-issue-remarks-input"
+                class="mt-2 w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-ink-900"></textarea>
+    </div>
+
+    <div>
+      <label class="text-xs font-semibold uppercase tracking-widest text-slate-400" for="attachment">Attachment (optional)</label>
+      <input id="attachment" name="attachment" type="file" accept=".jpg,.jpeg,.png,.pdf" data-testid="report-issue-attachment-input"
+             class="mt-2 block w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3.5 file:py-2 file:text-xs file:font-semibold file:text-slate-700 hover:file:bg-slate-200">
+      <p class="mt-1 text-xs text-slate-400">JPG, JPEG, PNG, or PDF. Maximum 5 MB.</p>
+    </div>
+
+    <div class="flex justify-end gap-2 pt-1">
+      <a href="{{ url_for('employee_issues') }}" data-testid="report-issue-cancel"
+         class="rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-500 hover:bg-slate-100">Cancel</a>
+      <button type="submit" data-testid="report-issue-submit"
+              class="rounded-xl bg-sky-600 px-5 py-2.5 text-sm font-semibold text-white transition-transform duration-200 hover:-translate-y-0.5">Submit ticket</button>
+    </div>
+  </form>
+  {% else %}
+  <div class="rounded-xl border border-dashed border-slate-200 py-16 text-center" data-testid="report-issue-no-assets">
+    <p class="text-sm text-slate-400">You have no assets currently assigned to you, so there's nothing to report an issue against.</p>
+    <a href="{{ url_for('employee_assets') }}" class="mt-4 inline-block text-sm font-semibold text-sky-600 hover:underline">View my assets →</a>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}
